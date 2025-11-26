@@ -5,8 +5,19 @@
 
 ![Demo GIF](Demo/TelegramBotAI.gif)
 
+## Screenshots
+📸 **Bot Interface Examples**:
+
+![Screenshot 1](screenshots/1.png)
+
+![Screenshot 2](screenshots/2.png)
+
 ## Overview
 A Telegram bot integrated with a Retrieval-Augmented Generation (RAG) system that answers questions based on company policy documents.
+
+## Architecture
+
+![System Architecture](screenshots/Architecture.jpeg)
 
 ## Project Structure
 
