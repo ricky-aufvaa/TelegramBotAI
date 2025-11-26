@@ -1,303 +1,226 @@
-# RAG (Retrieval-Augmented Generation) System
+# Telegram RAG Chatbot
+
+## Demo
+🎥 **See the bot in action**: [Demo Video](Demo/TelegramBotAI.mp4)
+
+![Demo GIF](Demo/TelegramBotAI.gif)
 
 ## Overview
-This is a complete open-source RAG system that processes PDF documents, creates embeddings, and provides an intelligent chatbot interface with conversation history. All models run locally using Ollama.
+A Telegram bot integrated with a Retrieval-Augmented Generation (RAG) system that answers questions based on company policy documents.
 
 ## Project Structure
 
 ```
-RAG/
-├── constants.py      # Configuration constants (paths, database)
-├── preprocess.py     # PDF loading and preprocessing pipeline
-├── helpers.py        # Utility functions (vectorstore, LLM, formatting)
-├── db.py            # Database models and chat history management
-├── prompts.py       # LangChain prompt templates
-├── chains.py        # RAG chain configuration
-├── main.py          # Main chatbot application
-├── data/            # PDF documents folder
-└── faiss_embed/     # Vector store embeddings
+telegram_bot/
+├── bot.py                 # Main bot application
+├── config.py             # Configuration and environment variables
+├── handlers/             # Command handlers
+│   ├── ask_handler.py    # RAG query handler (/ask command)
+│   ├── start_handler.py  # Welcome message handler (/start command)
+│   ├── help_handler.py   # Help information handler (/help command)
+│   └── image_handler.py  # Image processing handler
+└── RAG/                  # RAG system (see RAG/README.md)
+    ├── chains.py         # RAG chain configuration
+    ├── helpers.py        # Utility functions
+    ├── db.py            # Database and chat history
+    ├── prompts.py       # LangChain prompts
+    ├── preprocess.py    # Document preprocessing
+    ├── constants.py     # Configuration constants
+    └── data/            # PDF documents
 ```
 
-## Open-Source Stack
+## Features
 
-### Models Used (All via Ollama)
-- **LLM**: llama3.1:8b - For generating responses
-- **Embeddings**: llama3.1:8b - For document embeddings
-- **Vector Store**: FAISS - For similarity search
-- **Database**: SQLite - For chat history
+### ✅ Implemented Features
+- **RAG Integration**: Fully integrated RAG pipeline for document-based Q&A
+- **Conversation History**: Maintains per-user chat history using Telegram user IDs
+- **Multiple Commands**: /start, /help, /ask, /image
+- **Error Handling**: Graceful error handling with user-friendly messages
+- **Typing Indicator**: Shows typing status while processing queries
+- **Context-Aware**: Remembers conversation context for follow-up questions
 
-### Why Open Source?
-✅ **Privacy**: All data stays on your machine
-✅ **Cost**: No API fees or usage limits
-✅ **Control**: Full control over models and data
-✅ **Offline**: Works without internet connection
-✅ **Customizable**: Easy to swap models or fine-tune
+### 🔄 Command Reference
 
-## Files Description
+#### /start
+Shows welcome message and available commands
 
-### 1. constants.py
-Defines configuration constants:
-- `PDF_PATH`: Location of PDF documents ("data")
-- `MD_PATH`: Location for markdown files ("data/markdown")
-- `VDB_PATH`: Vector database path ("faiss_embed")
-- `DB_PATH`: SQLite database path ("chat.db")
+#### /help
+Displays detailed help information about using the bot
 
-### 2. preprocess.py
-Handles document preprocessing:
-- **Functions:**
-  - `find_all_pdfs()`: Recursively finds all PDF files in a folder
-  - `load_pdf()`: Loads all PDFs and returns documents
-  - `splitting()`: Splits documents into chunks (1000 chars, 200 overlap)
-  - `initialise_embed()`: Initializes Ollama embeddings (llama3.1:8b)
-  - `initialise_vectorstore()`: Creates and saves FAISS vector store
-- **Main execution**: Runs complete preprocessing pipeline
-- **Models**: Uses OllamaEmbeddings for creating document embeddings
+#### /ask <question>
+Queries the RAG system with your question
+- **Example**: `/ask What is the company vacation policy?`
+- **Features**:
+  - Searches through company policy documents
+  - Provides context-aware answers
+  - Maintains conversation history
+  - Shows typing indicator during processing
 
-### 3. helpers.py
-Utility functions:
-- **Functions:**
-  - `vectorstore()`: Loads FAISS vector store and returns retriever
-  - `get_chat_model()`: Initializes ChatOllama LLM (llama3.1:8b)
-  - `format_docs()`: Formats retrieved documents into string
-- **Models**: Uses ChatOllama for response generation
+#### /image
+Information about image processing with LLaVA vision model
 
-### 4. db.py
-Database management:
-- **Models:**
-  - `Session`: Stores chat sessions
-  - `Message`: Stores individual messages
-- **Functions:**
-  - `get_db()`: Database session generator
-  - `save_message()`: Saves a message to database
-  - `load_session_history()`: Loads chat history from database
-  - `get_session_history()`: Gets or creates session history
-  - `save_all_sessions()`: Saves all sessions to database
-
-### 5. prompts.py
-LangChain prompt templates:
-- System prompt with context injection
-- Chat history placeholder
-- User question input
-
-### 6. chains.py
-RAG chain configuration:
-- Initializes all components (embeddings, retriever, LLM)
-- Creates RAG chain with context retrieval
-- Wraps chain with message history
-
-### 7. main.py
-Main chatbot application:
-- Interactive command-line interface
-- Session management
-- Error handling
-- Exit commands: 'exit', 'quit', 'q'
+**Image Processing (Send Photo)**
+Simply send any photo to the bot (with or without caption) to get AI-powered image analysis
+- **Without caption**: Gets a detailed description of the image
+- **With caption**: Answers your specific question about the image
+- **Example**: Send a photo with caption "What objects are visible in this image?"
 
 ## Setup Instructions
 
-### 1. Install Ollama
+### 1. Prerequisites
 ```bash
-# Download and install from https://ollama.ai
-# Or use package manager:
+# Install Ollama
 curl https://ollama.ai/install.sh | sh
-```
 
-### 2. Pull Required Models
-```bash
-# Pull the LLM model
+# Pull required models
 ollama pull llama3.1:8b
+ollama pull llava:7b
 
-# Verify models are available
-ollama list
-```
-
-### 3. Install Python Dependencies
-```bash
+# Install Python packages
+pip install python-telegram-bot python-dotenv
 pip install langchain langchain-community langchain-ollama
-pip install faiss-cpu sqlalchemy python-dotenv pypdf
+pip install faiss-cpu sqlalchemy pypdf pillow
 ```
 
-### 4. Add PDF Documents
-Place your PDF files in the `RAG/data/` folder.
+### 2. Environment Configuration
+Create a `.env` file in the project root:
+```env
+# Telegram Bot Token (get from @BotFather)
+BOT_TOKEN=your_telegram_bot_token_here
+```
 
-### 5. Run Preprocessing
+Note: No API keys needed! All models run locally via Ollama.
+
+### 3. Get Telegram Bot Token
+1. Open Telegram and search for `@BotFather`
+2. Send `/newbot` command
+3. Follow the instructions to create your bot
+4. Copy the bot token and add it to `.env` file
+
+### 4. Prepare Documents
+1. Place your PDF documents in `RAG/data/` folder
+2. Run preprocessing to create embeddings:
 ```bash
 cd RAG
 python preprocess.py
 ```
 
-This will:
-- Load all PDFs from the data folder
-- Split documents into chunks
-- Create embeddings using Ollama (llama3.1:8b)
-- Save vector store to `faiss_embed/`
-
-### 6. Run the Chatbot
+### 5. Run the Bot
 ```bash
-python main.py
+cd telegram_bot
+python bot.py
 ```
 
-## Key Improvements Made
+You should see: `Bot is running...`
 
-### Open-Source Architecture
-✅ All models run locally via Ollama
-✅ No cloud dependencies or API keys needed
-✅ Complete privacy - data never leaves your machine
-✅ No usage costs or rate limits
+## How It Works
 
-### Code Quality
-✅ Added proper imports to all files
-✅ Added docstrings to all functions
-✅ Removed duplicate code
-✅ Fixed document loading and return values
-✅ Improved splitting function to work with document lists
+### RAG Integration Flow
 
-### Functionality
-✅ Completed preprocess.py main block with full pipeline
-✅ Created proper main.py with interactive chatbot
-✅ Fixed chains.py with all required imports and initialization
-✅ Maintained chat history with SQLite database
+1. **User sends query**: `/ask What is the vacation policy?`
 
-### Project Organization
-✅ Organized all code in RAG folder
-✅ Proper separation of concerns across modules
-✅ Clear file structure and dependencies
+2. **ask_handler.py processes**:
+   - Extracts query from command
+   - Gets user's Telegram ID as session_id
+   - Sends typing indicator
 
-## Usage Example
+3. **RAG chain executes**:
+   - Retrieves relevant document chunks from FAISS vector store
+   - Loads user's conversation history from database
+   - Generates context-aware response using Llama 3.1 (via Ollama)
 
+4. **Response sent back**:
+   - Bot sends the answer to user
+   - Conversation history is saved
+
+### Session Management
+- Each user has a unique session based on their Telegram user ID
+- Conversation history is maintained per user
+- Users can have contextual follow-up conversations
+
+### Error Handling
+- Network errors: Gracefully handled with retry logic
+- RAG errors: User-friendly error messages
+- Missing queries: Helpful usage instructions
+
+## Code Architecture
+
+### bot.py
+Main application that:
+- Initializes the Telegram bot
+- Registers command handlers
+- Starts polling for messages
+
+### handlers/ask_handler.py
+Core RAG integration:
 ```python
-# After running preprocess.py, start the chatbot:
-python main.py
-
-# Example conversation:
-You: What information is in the documents?
-Assistant: [Response based on PDF content]
-
-You: Tell me more about [specific topic]
-Assistant: [Contextual response with chat history]
-
-You: exit
-Goodbye!
+async def ask(update, context):
+    # Extract query
+    # Get session_id from user ID
+    # Call RAG chain
+    # Send response
 ```
 
-## Technical Details
+**Key Features**:
+- Async/await for non-blocking operations
+- User session management
+- Error handling
+- Typing indicators
 
-### LLM Model
-- **Model**: llama3.1:8b
-- **Provider**: Ollama (local)
-- **Purpose**: Response generation
+### RAG System
+See `RAG/README.md` for detailed RAG system documentation.
 
-### Embedding Model
-- **Model**: llama3.1:8b
-- **Provider**: Ollama (local)
-- **Purpose**: Document and query embeddings
+## Usage Examples
 
-### Vector Store
-- **Type**: FAISS
-- **Retrieval**: Similarity search
-- **Top K**: 6 documents
-
-### Text Splitting
-- **Chunk Size**: 1000 characters
-- **Chunk Overlap**: 200 characters
-- **Method**: RecursiveCharacterTextSplitter
-
-## Performance Considerations
-
-### System Requirements
-- **RAM**: 8GB minimum (16GB recommended)
-- **Storage**: 5GB for models + space for embeddings
-- **CPU**: Modern multi-core processor
-- **GPU**: Optional but recommended for faster inference
-
-### Response Times
-- **First query**: 5-10 seconds (model loading)
-- **Subsequent queries**: 2-5 seconds
-- **Preprocessing**: Depends on document count
-
-### Optimization Tips
-1. Keep Ollama running in background
-2. Use GPU if available
-3. Adjust chunk size based on document type
-4. Limit number of retrieved documents (k parameter)
-
-## Customization
-
-### Change LLM Model
-Edit `helpers.py`:
-```python
-def get_chat_model():
-    llm = ChatOllama(model="llama3.1:70b")  # Use larger model
-    return llm
+### Basic Query
+```
+User: /ask What is the company vacation policy?
+Bot: [Typing...]
+Bot: According to the company policy documents, employees are entitled to...
 ```
 
-### Change Embedding Model
-Edit `preprocess.py`:
-```python
-def initialise_embed():
-    embedding_function = OllamaEmbeddings(model="nomic-embed-text")
-    return embedding_function
+### Follow-up Question
+```
+User: /ask Tell me about remote work
+Bot: The company allows remote work with the following conditions...
+
+User: /ask How do I request it?
+Bot: [Uses conversation context] To request remote work, you need to...
 ```
 
-### Adjust Retrieval Parameters
-Edit `helpers.py`:
-```python
-retriever = vectorstore.as_retriever(
-    search_type="similarity",
-    search_kwargs={"k": 10}  # Retrieve more documents
-)
+### Error Handling
 ```
-
-### Modify Prompts
-Edit `prompts.py` to customize system prompts and behavior.
+User: /ask
+Bot: Please provide a question after /ask command.
+     Example: /ask What is the company policy on remote work?
+```
 
 ## Troubleshooting
 
-### Ollama Not Running
-```bash
-# Start Ollama service
-ollama serve
-```
+### Bot not responding
+1. Check if bot is running: `python bot.py`
+2. Verify BOT_TOKEN in `.env` file
+3. Check internet connection
 
-### Model Not Found
-```bash
-# Pull the model
-ollama pull llama3.1:8b
-```
+### RAG errors
+1. Ensure preprocessing was completed: `python RAG/preprocess.py`
+2. Verify Ollama is running: `ollama list`
+3. Check if `faiss_embed/` folder exists with embeddings
+4. Ensure llama3.1:8b model is pulled: `ollama pull llama3.1:8b`
 
-### Out of Memory
-- Use smaller model (e.g., llama3.1:7b)
-- Reduce chunk size in preprocessing
-- Decrease number of retrieved documents
+### Import errors
+1. Ensure all dependencies are installed
+2. Check Python path includes the project directory
+3. Verify all handler files exist
 
-### Slow Performance
-- Enable GPU acceleration
-- Use quantized models
-- Reduce context window size
+## Development
 
-## Available Ollama Models
+### Adding New Commands
+1. Create handler in `handlers/` folder
+2. Import handler in `bot.py`
+3. Register with `app.add_handler(CommandHandler("command", handler))`
 
-### LLM Options
-- `llama3.1:8b` - Balanced performance (default)
-- `llama3.1:70b` - Higher quality, slower
-- `mistral:7b` - Fast and efficient
-- `phi3:mini` - Lightweight option
-
-### Embedding Options
-- `llama3.1:8b` - General purpose (default)
-- `nomic-embed-text` - Optimized for embeddings
-- `mxbai-embed-large` - High quality embeddings
-
-## Notes
-
-- The system maintains conversation history in SQLite database
-- Each session is identified by a session_id
-- Vector embeddings are stored locally in `faiss_embed/`
-- All processing happens locally - no data sent to external services
-- The system supports multiple PDF documents simultaneously
-- Models are cached by Ollama for faster subsequent loads
-
-## Resources
-
-- [Ollama Documentation](https://ollama.ai/docs)
-- [Llama 3.1 Model Info](https://ollama.ai/library/llama3.1)
-- [FAISS Documentation](https://faiss.ai/)
+### Modifying RAG Behavior
+- Edit prompts in `RAG/prompts.py`
+- Adjust retrieval parameters in `RAG/helpers.py`
+- Modify chunking in `RAG/preprocess.py`
